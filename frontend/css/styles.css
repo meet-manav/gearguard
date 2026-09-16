@@ -436,6 +436,8 @@ body {
 .sim-btn:hover {
     background: var(--google-surface-alt);
     color: var(--text-primary);
+    opacity: 0.95 !important;
+    filter: none !important;
 }
 
 /* Explicit Active Selection for each individual condition */

@@ -722,12 +722,17 @@ function highlightSimBtn(activeId) {
     ['sim-healthy', 'sim-wear', 'sim-misaligned', 'sim-broken'].forEach(id => {
         const btn = document.getElementById(id);
         if (!btn) return;
+        btn.blur();
+        btn.style.boxShadow = '';
+        btn.style.fontWeight = '';
         if (id === activeId) {
-            btn.style.boxShadow = '0 0 0 2px var(--google-blue)';
-            btn.style.fontWeight = '700';
+            btn.classList.add('active');
+            btn.style.opacity = '1';
+            btn.style.filter = 'none';
         } else {
-            btn.style.boxShadow = 'none';
-            btn.style.fontWeight = '600';
+            btn.classList.remove('active');
+            btn.style.opacity = '0.45';
+            btn.style.filter = 'blur(0.3px)';
         }
     });
 }
