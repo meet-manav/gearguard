@@ -303,6 +303,7 @@ function updateUI(data) {
     let alertAction = '';
 
     if (data.status.includes('Healthy')) {
+        highlightSimBtn('sim-healthy');
         heroClass = 'is-healthy';
         colour = '#34a853';
         severityTag = 'healthy';
@@ -322,6 +323,7 @@ function updateUI(data) {
         alertAction = 'Nominal baseline verified. Continue standard run.';
 
     } else if (data.status.includes('Wear')) {
+        highlightSimBtn('sim-wear');
         heroClass = 'is-warn';
         colour = '#f9ab00';
         severityTag = 'advisory';
@@ -351,6 +353,7 @@ function updateUI(data) {
         alertAction = 'Check bearing temperature and lubricant viscosity.';
 
     } else if (data.status.includes('Misalignment')) {
+        highlightSimBtn('sim-misaligned');
         heroClass = 'is-orange';
         colour = '#fa7b17';
         severityTag = 'warning';
@@ -381,6 +384,7 @@ function updateUI(data) {
 
     } else {
         // Broken Gear Tooth
+        highlightSimBtn('sim-broken');
         heroClass = 'is-danger';
         colour = '#ea4335';
         severityTag = 'critical';
