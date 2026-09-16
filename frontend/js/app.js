@@ -258,6 +258,12 @@ async function loadAvailableFiles() {
 async function fetchData() {
     if (isPaused) return; // Freeze stream if user paused to inspect
 
+    // Maintain uploaded file report analysis if active
+    if (pendingUploadedData) {
+        updateUI(pendingUploadedData);
+        return;
+    }
+
     try {
         const baseUrl = window.location.origin.startsWith('http') ? '' : 'http://127.0.0.1:8000';
         let url = `${baseUrl}/api/dashboard?sim_status=${simulationMode}`;
@@ -831,6 +837,7 @@ function highlightSimBtn(activeId) {
 }
 
 document.getElementById('sim-healthy').addEventListener('click', () => {
+    pendingUploadedData = null;
     simulationMode = 'healthy';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
@@ -838,6 +845,7 @@ document.getElementById('sim-healthy').addEventListener('click', () => {
     if (isPaused) startStream(); else fetchData();
 });
 document.getElementById('sim-wear').addEventListener('click', () => {
+    pendingUploadedData = null;
     simulationMode = 'wear';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
@@ -845,6 +853,7 @@ document.getElementById('sim-wear').addEventListener('click', () => {
     if (isPaused) startStream(); else fetchData();
 });
 document.getElementById('sim-misaligned').addEventListener('click', () => {
+    pendingUploadedData = null;
     simulationMode = 'misalignment';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
@@ -852,6 +861,7 @@ document.getElementById('sim-misaligned').addEventListener('click', () => {
     if (isPaused) startStream(); else fetchData();
 });
 document.getElementById('sim-broken').addEventListener('click', () => {
+    pendingUploadedData = null;
     simulationMode = 'broken';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
