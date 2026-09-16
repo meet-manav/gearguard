@@ -680,12 +680,18 @@ if (fileInput) {
                 return;
             }
 
-            // Pause live timer so user can review the uploaded file analysis
+            // Keep stream in Standby / Paused mode while user reviews uploaded file
             isPaused = true;
-            if (pauseBtn) {
-                pauseBtn.textContent = '▶️ Resume Stream';
-                pauseBtn.style.background = '#fef7e0';
-                pauseBtn.style.color = '#b06000';
+            const btnToggle = document.getElementById('btn-stream-toggle');
+            const statusPill = document.getElementById('stream-status-pill');
+
+            if (btnToggle) {
+                btnToggle.innerHTML = '<span class="btn-icon">▶</span> <span id="stream-btn-text">Start Telemetry Stream</span>';
+                btnToggle.className = 'google-btn stream-toggle-btn btn-start';
+            }
+            if (statusPill) {
+                statusPill.className = 'stream-status-chip paused';
+                statusPill.innerHTML = `<span class="pulse-dot"></span> Uploaded Report: ${file.name}`;
             }
 
             updateUI(data);
