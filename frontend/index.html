@@ -73,7 +73,16 @@
                     <h2 id="current-view-title">Live Vibration Telemetry</h2>
                     <span class="badge-chip"><span class="chip-dot"></span> SpectraQuest GB 100</span>
                 </div>
-                <p id="last-updated" class="status-meta">Connecting to telemetry server...</p>
+                <p id="last-updated" class="status-meta">⏸ Telemetry Standby • Press Start to stream real-time data</p>
+                <div class="stream-control-row">
+                    <button id="btn-stream-toggle" class="google-btn stream-toggle-btn btn-start" title="Start / Pause live telemetry stream">
+                        <span class="btn-icon">▶</span>
+                        <span id="stream-btn-text">Start Telemetry Stream</span>
+                    </button>
+                    <span id="stream-status-pill" class="stream-status-chip paused">
+                        <span class="pulse-dot"></span> Standby (Paused)
+                    </span>
+                </div>
             </div>
 
             <div class="topbar-right">

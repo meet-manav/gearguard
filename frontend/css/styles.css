@@ -373,6 +373,101 @@ body {
     box-shadow: 0 2px 6px rgba(26,115,232,0.3);
 }
 
+/* Stream Control Row (Start / Pause Button & Status Chip) */
+.stream-control-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.stream-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stream-toggle-btn.btn-start {
+    background: #34a853;
+    color: #ffffff;
+}
+
+.stream-toggle-btn.btn-start:hover {
+    background: #2d9248;
+    box-shadow: 0 4px 12px rgba(52, 168, 83, 0.35);
+    transform: translateY(-1px);
+}
+
+.stream-toggle-btn.btn-pause {
+    background: #e37400;
+    color: #ffffff;
+}
+
+.stream-toggle-btn.btn-pause:hover {
+    background: #c76500;
+    box-shadow: 0 4px 12px rgba(227, 116, 0, 0.35);
+    transform: translateY(-1px);
+}
+
+.stream-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    transition: all 0.25s ease;
+}
+
+.stream-status-chip.paused {
+    background: var(--google-surface-alt);
+    color: var(--text-secondary);
+    border: 1px solid var(--google-border);
+}
+
+.stream-status-chip.paused .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #9aa0a6;
+}
+
+.stream-status-chip.streaming {
+    background: var(--google-green-subtle);
+    color: var(--google-green-dark);
+    border: 1px solid var(--google-green);
+}
+
+.stream-status-chip.streaming .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34a853;
+    box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+    animation: pulse-ring 1.8s infinite;
+}
+
+@keyframes pulse-ring {
+    0% {
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(52, 168, 83, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(52, 168, 83, 0);
+    }
+}
+
 /* Simulate Control Panel */
 .sim-control-panel {
     display: flex;

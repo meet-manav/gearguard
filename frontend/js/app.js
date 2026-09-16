@@ -7,7 +7,7 @@ let fftChart = null;
 let chCharts = [null, null, null, null];
 let simulationMode = 'healthy'; // Default steady state — NO random slideshow!
 let selectedDatasetFile = '';
-let isPaused = false;
+let isPaused = true;
 let currentView = 'overview';
 
 // Alert tracking
@@ -553,22 +553,96 @@ if (clearAlertsBtn) {
 }
 
 // --------------------------------------------------------------------------
-// PAUSE / RESUME STREAM CONTROLS
+// START / PAUSE TELEMETRY STREAM CONTROLS
 // --------------------------------------------------------------------------
-const pauseBtn = document.getElementById('btn-pause-stream');
-if (pauseBtn) {
-    pauseBtn.addEventListener('click', () => {
-        isPaused = !isPaused;
+function resetToZeroState() {
+    isPaused = true;
+    const hero = document.getElementById('status-hero');
+    const statusEl = document.getElementById('overall-status');
+    const subEl = document.getElementById('status-subtitle');
+    const ringScore = document.getElementById('health-score-ring');
+    const ringArc = document.getElementById('ring-arc');
+    const btnReport = document.getElementById('btn-report');
+    const btnToggle = document.getElementById('btn-stream-toggle');
+    const statusPill = document.getElementById('stream-status-pill');
+
+    if (hero) hero.className = 'status-hero is-standby';
+    if (statusEl) statusEl.textContent = 'Telemetry Standby — Stream Inactive';
+    if (subEl) subEl.textContent = 'Sensors are offline in standby mode. Press ▶ Start Telemetry Stream to initiate live vibration acquisition.';
+    if (ringScore) ringScore.textContent = '0';
+    if (ringArc) ringArc.setAttribute('stroke-dashoffset', '314');
+    if (btnReport) btnReport.style.display = 'none';
+
+    // Zero KPI metric cards
+    const mRms = document.getElementById('m-rms');
+    const mPeak = document.getElementById('m-peak');
+    const mKurt = document.getElementById('m-kurtosis');
+    const mSensors = document.getElementById('m-sensors');
+
+    if (mRms) mRms.textContent = '0.000';
+    if (mPeak) mPeak.textContent = '0.000';
+    if (mKurt) mKurt.textContent = '0.00';
+    if (mSensors) mSensors.textContent = '0 / 4';
+
+    // Zero channel cards
+    for (let i = 1; i <= 4; i++) {
+        const valEl = document.getElementById(`ch${i}-val`);
+        if (valEl) valEl.textContent = '0.000 g';
+    }
+
+    // Flatline waveform & FFT charts
+    const zeros = new Array(180).fill(0);
+    const fftZerosX = Array.from({length: 60}, (_, i) => i * 30);
+    const fftZerosY = new Array(60).fill(0);
+
+    if (waveformChart) {
+        waveformChart.data.labels = zeros.map((_, i) => i);
+        waveformChart.data.datasets[0].data = zeros;
+        waveformChart.update('none');
+    }
+    if (fftChart) {
+        fftChart.data.labels = fftZerosX;
+        fftChart.data.datasets[0].data = fftZerosY;
+        fftChart.update('none');
+    }
+
+    // Update toggle button UI
+    if (btnToggle) {
+        btnToggle.innerHTML = '<span class="btn-icon">▶</span> <span id="stream-btn-text">Start Telemetry Stream</span>';
+        btnToggle.className = 'google-btn stream-toggle-btn btn-start';
+    }
+    if (statusPill) {
+        statusPill.className = 'stream-status-chip paused';
+        statusPill.innerHTML = '<span class="pulse-dot"></span> Standby (Paused)';
+    }
+
+    const lastUpd = document.getElementById('last-updated');
+    if (lastUpd) lastUpd.textContent = '⏸ Telemetry Standby • Press Start to stream real-time data';
+}
+
+function startStream() {
+    isPaused = false;
+    const btnToggle = document.getElementById('btn-stream-toggle');
+    const statusPill = document.getElementById('stream-status-pill');
+
+    if (btnToggle) {
+        btnToggle.innerHTML = '<span class="btn-icon">⏸</span> <span id="stream-btn-text">Pause Telemetry Stream</span>';
+        btnToggle.className = 'google-btn stream-toggle-btn btn-pause';
+    }
+    if (statusPill) {
+        statusPill.className = 'stream-status-chip streaming';
+        statusPill.innerHTML = '<span class="pulse-dot"></span> Live Telemetry (200 Hz)';
+    }
+    fetchData();
+}
+
+const streamToggleBtn = document.getElementById('btn-stream-toggle');
+if (streamToggleBtn) {
+    streamToggleBtn.addEventListener('click', () => {
         if (isPaused) {
-            pauseBtn.textContent = '▶️ Resume';
-            pauseBtn.style.background = '#fef7e0';
-            pauseBtn.style.color = '#b06000';
-            document.getElementById('last-updated').textContent = '⏸️ Stream Paused (Inspecting current window)';
+            startStream();
         } else {
-            pauseBtn.textContent = '⏸️ Pause';
-            pauseBtn.style.background = '';
-            pauseBtn.style.color = '';
-            fetchData();
+            resetToZeroState();
         }
     });
 }
@@ -746,28 +820,28 @@ document.getElementById('sim-healthy').addEventListener('click', () => {
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
     highlightSimBtn('sim-healthy');
-    fetchData();
+    if (isPaused) startStream(); else fetchData();
 });
 document.getElementById('sim-wear').addEventListener('click', () => {
     simulationMode = 'wear';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
     highlightSimBtn('sim-wear');
-    fetchData();
+    if (isPaused) startStream(); else fetchData();
 });
 document.getElementById('sim-misaligned').addEventListener('click', () => {
     simulationMode = 'misalignment';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
     highlightSimBtn('sim-misaligned');
-    fetchData();
+    if (isPaused) startStream(); else fetchData();
 });
 document.getElementById('sim-broken').addEventListener('click', () => {
     simulationMode = 'broken';
     selectedDatasetFile = '';
     document.getElementById('dataset-file-select').value = '';
     highlightSimBtn('sim-broken');
-    fetchData();
+    if (isPaused) startStream(); else fetchData();
 });
 
 // --------------------------------------------------------------------------
@@ -777,5 +851,5 @@ initOverviewCharts();
 initChannelCharts();
 loadAvailableFiles();
 highlightSimBtn('sim-healthy');
-fetchData();
+resetToZeroState(); // Start in 0 / Standby mode until user hits Start
 setInterval(fetchData, 1500);
