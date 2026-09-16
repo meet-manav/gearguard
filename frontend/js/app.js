@@ -7,6 +7,7 @@ let fftChart = null;
 let chCharts = [null, null, null, null];
 let simulationMode = 'healthy'; // Default steady state — NO random slideshow!
 let selectedDatasetFile = '';
+let pendingUploadedData = null;
 let isPaused = true;
 let currentView = 'overview';
 
@@ -616,6 +617,7 @@ function resetToZeroState() {
         statusPill.innerHTML = '<span class="pulse-dot"></span> Standby (Paused)';
     }
 
+    pendingUploadedData = null;
     const lastUpd = document.getElementById('last-updated');
     if (lastUpd) lastUpd.textContent = '⏸ Telemetry Standby • Press Start to stream real-time data';
 }
@@ -633,7 +635,12 @@ function startStream() {
         statusPill.className = 'stream-status-chip streaming';
         statusPill.innerHTML = '<span class="pulse-dot"></span> Live Telemetry (200 Hz)';
     }
-    fetchData();
+
+    if (pendingUploadedData) {
+        updateUI(pendingUploadedData);
+    } else {
+        fetchData();
+    }
 }
 
 const streamToggleBtn = document.getElementById('btn-stream-toggle');
@@ -663,7 +670,8 @@ if (fileInput) {
         const file = e.target.files[0];
         if (!file) return;
 
-        document.getElementById('last-updated').textContent = `⏳ Analyzing uploaded file: ${file.name}...`;
+        const lastUpd = document.getElementById('last-updated');
+        if (lastUpd) lastUpd.textContent = `⏳ Staging uploaded file: ${file.name}...`;
 
         const formData = new FormData();
         formData.append('file', file);
@@ -680,8 +688,10 @@ if (fileInput) {
                 return;
             }
 
-            // Keep stream in Standby / Paused mode while user reviews uploaded file
+            // Stage uploaded report analysis data ready for when user presses Start
+            pendingUploadedData = data;
             isPaused = true;
+
             const btnToggle = document.getElementById('btn-stream-toggle');
             const statusPill = document.getElementById('stream-status-pill');
 
@@ -691,16 +701,15 @@ if (fileInput) {
             }
             if (statusPill) {
                 statusPill.className = 'stream-status-chip paused';
-                statusPill.innerHTML = `<span class="pulse-dot"></span> Uploaded Report: ${file.name}`;
+                statusPill.innerHTML = `<span class="pulse-dot"></span> Ready: ${file.name}`;
             }
 
-            updateUI(data);
-            // Switch to overview view to show analysis
+            if (lastUpd) lastUpd.textContent = `📁 File Staged: ${file.name} • Press ▶ Start Telemetry Stream to view report`;
+
+            // Remain on main page in standby mode. DO NOT auto-open modal!
             switchView('overview');
-            // Auto open the diagnostics report
-            modal.classList.add('open');
         } catch (err) {
-            alert('Failed to upload and analyze file: ' + err.message);
+            alert('Failed to process file: ' + err.message);
         }
     });
 }
