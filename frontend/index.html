@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GearGuard — Predictive Gearbox Maintenance</title>
+    <meta name="description" content="GearGuard uses vibration sensor analysis and ML to detect gearbox faults like broken teeth, misalignment, and bearing wear in real-time.">
+    
+    <!-- Google Fonts: Inter & Roboto for Material Design precision -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- ===== SIDE NAVIGATION BAR ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <h1>GearGuard</h1>
+                <span>Predictive Maintenance</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-view="overview" id="nav-overview">
+                <span class="nav-icon">📊</span>
+                <span class="nav-title">Overview</span>
+            </button>
+            <button class="nav-item" data-view="sensors" id="nav-sensors">
+                <span class="nav-icon">📡</span>
+                <span class="nav-title">Sensors</span>
+                <span class="nav-pill">4 Ch</span>
+            </button>
+            <button class="nav-item" data-view="alerts" id="nav-alerts">
+                <span class="nav-icon">🔔</span>
+                <span class="nav-title">Alerts</span>
+                <span class="badge" id="alert-badge">0</span>
+            </button>
+            <button class="nav-item" data-view="diagnostics" id="nav-diagnostics">
+                <span class="nav-icon">📋</span>
+                <span class="nav-title">Diagnostics</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-status-box">
+            <div class="live-dot-wrap">
+                <span class="live-dot"></span>
+            </div>
+            <div class="status-box-info">
+                <strong>Real-Time Stream</strong>
+                <span>Sampling rate 200 Hz</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT WORKSPACE ===== -->
+    <main class="main-wrapper">
+
+        <!-- Top Header / App Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="page-title-row">
+                    <h2 id="current-view-title">Live Vibration Telemetry</h2>
+                    <span class="badge-chip"><span class="chip-dot"></span> SpectraQuest GB 100</span>
+                </div>
+                <p id="last-updated" class="status-meta">Connecting to telemetry server...</p>
+            </div>
+
+            <div class="topbar-right">
+                <div class="sim-control-panel">
+                    <span class="sim-label">Simulate Fault:</span>
+                    <div class="sim-buttons">
+                        <button id="sim-healthy" class="sim-btn btn-healthy" title="Simulate normal operation">
+                            <span class="dot dot-green"></span> Healthy
+                        </button>
+                        <button id="sim-wear" class="sim-btn btn-wear" title="Simulate early bearing wear">
+                            <span class="dot dot-yellow"></span> Wear
+                        </button>
+                        <button id="sim-misaligned" class="sim-btn btn-misaligned" title="Simulate gear misalignment">
+                            <span class="dot dot-orange"></span> Misalign
+                        </button>
+                        <button id="sim-broken" class="sim-btn btn-broken" title="Simulate fractured gear tooth">
+                            <span class="dot dot-red"></span> Broken
+                        </button>
+                        <button id="btn-test-file" class="sim-btn btn-upload-test" title="Upload any file (TXT, CSV, PDF, Image, Screenshots)">
+                            📁 Test My File
+                        </button>
+                        <input type="file" id="file-upload-input" accept="*/*" style="display:none;" />
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================================================================
+             VIEW 1: OVERVIEW (Main Dashboard)
+             ================================================================ -->
+        <div id="view-overview" class="app-view active">
+            <!-- Condition Banner Hero -->
+            <section class="status-hero" id="status-hero">
+                <div class="status-hero-main">
+                    <div class="status-tag-row">
+                        <span class="status-category-tag">SYSTEM DIAGNOSIS</span>
+                        <span class="engine-tag">SpectraQuest Test Rig</span>
+                    </div>
+                    <h2 id="overall-status" class="status-heading">Connecting to sensors...</h2>
+                    <p id="status-subtitle" class="status-sub">Listening for accelerometer signals across 4 vibration channels.</p>
+                    <div class="status-action-row">
+                        <button id="btn-report" class="google-btn primary-btn" style="display:none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            View Full Diagnostic Report & Guide
+                        </button>
+                    </div>
+                </div>
+
+                <div class="status-hero-gauge">
+                    <div class="health-ring-wrapper">
+                        <svg class="health-ring" viewBox="0 0 120 120">
+                            <circle class="ring-track" cx="60" cy="60" r="50" fill="none" stroke="#e8eaed" stroke-width="9"/>
+                            <circle id="ring-arc" class="ring-fill" cx="60" cy="60" r="50" fill="none" stroke="#34a853" stroke-width="9"
+                                stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="0"
+                                transform="rotate(-90 60 60)"/>
+                        </svg>
+                        <div class="ring-center">
+                            <span id="health-score-ring" class="ring-number">--</span>
+                            <span class="ring-label">Health Index</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- KPI Metric Cards -->
+            <section class="metrics-row">
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-blue-tint">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a73e8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">RMS Vibration</span>
+                        <div class="metric-data-line">
+                            <span class="metric-value" id="m-rms">--</span>
+                            <span class="metric-unit">g</span>
+                        </div>
+                        <span class="metric-trend">Root mean square intensity</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-amber-tint">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e37400" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Peak Amplitude</span>
+                        <div class="metric-data-line">
+                            <span class="metric-value" id="m-peak">--</span>
+                            <span class="metric-unit">g</span>
+                        </div>
+                        <span class="metric-trend">Maximum shock impulse</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-purple-tint">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9334e8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Kurtosis Value</span>
+                        <div class="metric-data-line">
+                            <span class="metric-value" id="m-kurt">--</span>
+                            <span class="metric-unit">index</span>
+                        </div>
+                        <span class="metric-trend">Spikiness distribution</span>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon-box bg-green-tint">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#137333" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                    </div>
+                    <div class="metric-info">
+                        <span class="metric-label">Active Sensors</span>
+                        <div class="metric-data-line">
+                            <span class="metric-value">4 / 4</span>
+                            <span class="metric-unit">channels</span>
+                        </div>
+                        <span class="metric-trend">All accelerometers online</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dynamic Visualization Charts -->
+            <section class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title-group">
+                            <h3>Time-Domain Waveform</h3>
+                            <span class="pill-badge">Sensor 1 • Raw Acceleration</span>
+                        </div>
+                        <span class="live-tag"><span class="pulsing-green"></span> LIVE 200 Hz</span>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="waveformChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title-group">
+                            <h3>Fast Fourier Transform (FFT)</h3>
+                            <span class="pill-badge">Spectral Density</span>
+                        </div>
+                        <span class="hz-indicator">0 – 1000 Hz</span>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="fftChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ================================================================
+             VIEW 2: SENSORS (All 4 Vibration Channels)
+             ================================================================ -->
+        <div id="view-sensors" class="app-view" style="display:none;">
+            <div class="section-banner">
+                <div>
+                    <h3 class="section-heading">Multi-Channel Accelerometer Telemetry</h3>
+                    <p class="section-desc">Real-time vibration analysis across all 4 triaxial/radial accelerometer channels.</p>
+                </div>
+                <div class="channel-status-pill">
+                    <span class="live-dot"></span> 4 / 4 Online & Transmitting
+                </div>
+            </div>
+
+            <div class="sensors-grid">
+                <!-- Channel 1 Card -->
+                <div class="sensor-channel-card">
+                    <div class="channel-card-top">
+                        <div class="channel-identity">
+                            <span class="channel-tag-chip">CH 1</span>
+                            <h4>Input Planetary Radial</h4>
+                        </div>
+                        <span class="sensor-badge badge-active" id="ch1-status">Online</span>
+                    </div>
+                    <div class="channel-stats-row">
+                        <div class="ch-stat">
+                            <span class="stat-lbl">RMS</span>
+                            <strong id="ch1-rms">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Peak</span>
+                            <strong id="ch1-peak">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Kurtosis</span>
+                            <strong id="ch1-kurt">--</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Mean</span>
+                            <strong id="ch1-mean">-- g</strong>
+                        </div>
+                    </div>
+                    <div class="mini-chart-box">
+                        <canvas id="ch1Chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Channel 2 Card -->
+                <div class="sensor-channel-card">
+                    <div class="channel-card-top">
+                        <div class="channel-identity">
+                            <span class="channel-tag-chip">CH 2</span>
+                            <h4>Input Shaft Axial</h4>
+                        </div>
+                        <span class="sensor-badge badge-active" id="ch2-status">Online</span>
+                    </div>
+                    <div class="channel-stats-row">
+                        <div class="ch-stat">
+                            <span class="stat-lbl">RMS</span>
+                            <strong id="ch2-rms">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Peak</span>
+                            <strong id="ch2-peak">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Kurtosis</span>
+                            <strong id="ch2-kurt">--</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Mean</span>
+                            <strong id="ch2-mean">-- g</strong>
+                        </div>
+                    </div>
+                    <div class="mini-chart-box">
+                        <canvas id="ch2Chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Channel 3 Card -->
+                <div class="sensor-channel-card">
+                    <div class="channel-card-top">
+                        <div class="channel-identity">
+                            <span class="channel-tag-chip">CH 3</span>
+                            <h4>Output Shaft Radial</h4>
+                        </div>
+                        <span class="sensor-badge badge-active" id="ch3-status">Online</span>
+                    </div>
+                    <div class="channel-stats-row">
+                        <div class="ch-stat">
+                            <span class="stat-lbl">RMS</span>
+                            <strong id="ch3-rms">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Peak</span>
+                            <strong id="ch3-peak">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Kurtosis</span>
+                            <strong id="ch3-kurt">--</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Mean</span>
+                            <strong id="ch3-mean">-- g</strong>
+                        </div>
+                    </div>
+                    <div class="mini-chart-box">
+                        <canvas id="ch3Chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Channel 4 Card -->
+                <div class="sensor-channel-card">
+                    <div class="channel-card-top">
+                        <div class="channel-identity">
+                            <span class="channel-tag-chip">CH 4</span>
+                            <h4>Output Shaft Axial</h4>
+                        </div>
+                        <span class="sensor-badge badge-active" id="ch4-status">Online</span>
+                    </div>
+                    <div class="channel-stats-row">
+                        <div class="ch-stat">
+                            <span class="stat-lbl">RMS</span>
+                            <strong id="ch4-rms">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Peak</span>
+                            <strong id="ch4-peak">-- g</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Kurtosis</span>
+                            <strong id="ch4-kurt">--</strong>
+                        </div>
+                        <div class="ch-stat">
+                            <span class="stat-lbl">Mean</span>
+                            <strong id="ch4-mean">-- g</strong>
+                        </div>
+                    </div>
+                    <div class="mini-chart-box">
+                        <canvas id="ch4Chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             VIEW 3: ALERTS (Real-Time Fault Notification Log)
+             ================================================================ -->
+        <div id="view-alerts" class="app-view" style="display:none;">
+            <div class="section-banner">
+                <div>
+                    <h3 class="section-heading">Fault Event Logs & Anomaly Notifications</h3>
+                    <p class="section-desc">Continuous telemetry audit trail with severity ranking and recommended maintenance actions.</p>
+                </div>
+                <div class="alert-actions-group">
+                    <button class="google-btn secondary-btn" id="btn-clear-alerts">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Clear Alert History
+                    </button>
+                </div>
+            </div>
+
+            <div class="alerts-summary-cards">
+                <div class="alert-kpi-card bg-red-light">
+                    <div class="kpi-num" id="count-critical">0</div>
+                    <div class="kpi-text">Critical Faults</div>
+                </div>
+                <div class="alert-kpi-card bg-orange-light">
+                    <div class="kpi-num" id="count-warning">0</div>
+                    <div class="kpi-text">Warnings</div>
+                </div>
+                <div class="alert-kpi-card bg-yellow-light">
+                    <div class="kpi-num" id="count-advisory">0</div>
+                    <div class="kpi-text">Advisories</div>
+                </div>
+                <div class="alert-kpi-card bg-green-light">
+                    <div class="kpi-num" id="count-healthy">0</div>
+                    <div class="kpi-text">Healthy Cycles</div>
+                </div>
+            </div>
+
+            <div class="alert-feed-card">
+                <div class="feed-header">
+                    <h4>Recent Telemetry Events</h4>
+                    <span class="live-tag"><span class="pulsing-green"></span> Auto-monitoring</span>
+                </div>
+                <div class="alert-list" id="alert-list-container">
+                    <div class="empty-alerts" id="empty-alert-msg">
+                        <span class="empty-icon">✅</span>
+                        <strong>No unacknowledged alerts</strong>
+                        <p>All 4 vibration channels are operating within acceptable ISO 10816 baseline thresholds.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================================================================
+             VIEW 4: DIAGNOSTICS (Troubleshooting Matrix & Repair SOPs)
+             ================================================================ -->
+        <div id="view-diagnostics" class="app-view" style="display:none;">
+            <div class="section-banner">
+                <div>
+                    <h3 class="section-heading">Predictive Maintenance & Engineering Diagnostics</h3>
+                    <p class="section-desc">ISO vibration severity guidelines, failure mode signatures, and step-by-step Standard Operating Procedures (SOPs).</p>
+                </div>
+                <div class="alert-actions-group">
+                    <button class="google-btn primary-btn" id="btn-open-modal-from-diag">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        Launch Interactive Fix Guide
+                    </button>
+                    <button class="google-btn secondary-btn" onclick="window.print()">
+                        🖨️ Print Full Manual
+                    </button>
+                </div>
+            </div>
+
+            <!-- Diagnostics Matrix Grid -->
+            <div class="diagnostics-matrix-grid">
+                <!-- Healthy Card -->
+                <div class="diag-matrix-card border-green">
+                    <div class="matrix-card-header">
+                        <span class="status-indicator-dot dot-green"></span>
+                        <h4>Healthy Baseline Operation</h4>
+                    </div>
+                    <p class="diag-signature"><strong>Vibration Signature:</strong> Low amplitude broadband noise (&lt; 2.5 g RMS), absence of prominent GMF sidebands.</p>
+                    <ul class="diag-action-list">
+                        <li>Maintain lubricant top-off every 500 operating hours.</li>
+                        <li>Inspect radial lip seals for thermal degradation.</li>
+                        <li>Archive monthly FFT baseline snapshots for historical trending.</li>
+                    </ul>
+                </div>
+
+                <!-- Bearing Wear Card -->
+                <div class="diag-matrix-card border-yellow">
+                    <div class="matrix-card-header">
+                        <span class="status-indicator-dot dot-yellow"></span>
+                        <h4>Bearing Raceway Wear</h4>
+                    </div>
+                    <p class="diag-signature"><strong>Vibration Signature:</strong> High frequency acoustic excitation (3–5 kHz), elevated kurtosis (&gt; 3.5).</p>
+                    <ul class="diag-action-list">
+                        <li>Measure bearing cap temperatures with infrared pyrometer (&lt; 75°C normal).</li>
+                        <li>Perform grease solvent test to identify microscopic metal shavings.</li>
+                        <li>Flush bearing housing and repack with NLGI-2 synthetic grease.</li>
+                    </ul>
+                </div>
+
+                <!-- Misalignment Card -->
+                <div class="diag-matrix-card border-orange">
+                    <div class="matrix-card-header">
+                        <span class="status-indicator-dot dot-orange"></span>
+                        <h4>Shaft & Coupling Misalignment</h4>
+                    </div>
+                    <p class="diag-signature"><strong>Vibration Signature:</strong> Dominant 1X and 2X rotational speed peaks; phase difference across coupling &gt; 90°.</p>
+                    <ul class="diag-action-list">
+                        <li>Check motor feet for soft-foot gap using a 0.05 mm feeler gauge.</li>
+                        <li>Inspect elastomeric coupling spider for shear tears or hardening.</li>
+                        <li>Re-align motor-to-gearbox shafts using dial indicator or laser tool.</li>
+                    </ul>
+                </div>
+
+                <!-- Broken Tooth Card -->
+                <div class="diag-matrix-card border-red">
+                    <div class="matrix-card-header">
+                        <span class="status-indicator-dot dot-red"></span>
+                        <h4>Broken Gear Tooth (Critical)</h4>
+                    </div>
+                    <p class="diag-signature"><strong>Vibration Signature:</strong> Severe repetitive transient shock pulses at Gear Mesh Frequency (GMF) with sidebands.</p>
+                    <ul class="diag-action-list">
+                        <li>Halt motor immediately; apply Lockout/Tagout (LOTO) disconnect.</li>
+                        <li>Drain oil through 100-micron strainer to recover tooth fragments.</li>
+                        <li>Replace pinion and wheel gear pair; verify backlash with lead wire.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Maintenance SOP Checklist -->
+            <div class="checklist-card">
+                <div class="checklist-header">
+                    <h4>Pre-Commissioning Machine Health Checklist</h4>
+                    <span class="checklist-subtitle">Ensure all items are verified before energizing the drive:</span>
+                </div>
+                <div class="checklist-items">
+                    <label class="check-item">
+                        <input type="checkbox" checked>
+                        <span>Lockout/Tagout (LOTO) key secured before removing guard panels</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox" checked>
+                        <span>Gearbox oil reservoir filled to sight glass midpoint (ISO VG 220)</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox">
+                        <span>Coupling laser alignment tolerance confirmed within &lt; 0.05 mm</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox">
+                        <span>Foundation mounting bolts torqued to manufacturer specification (65 Nm)</span>
+                    </label>
+                    <label class="check-item">
+                        <input type="checkbox">
+                        <span>All 4 accelerometer sensor mounting studs tightened to 3.5 Nm</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ===== GOOGLE-STYLE DIAGNOSTIC MODAL ===== -->
+    <div id="report-modal" class="modal" role="dialog" aria-modal="true">
+        <div class="modal-overlay"></div>
+        <div class="modal-box">
+            <button class="modal-close" id="modal-close-btn" aria-label="Close modal">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div class="modal-header-section" id="modal-hero">
+                <div class="modal-icon-badge" id="modal-hero-icon">🛠️</div>
+                <div>
+                    <h2 id="modal-title">Condition Diagnostics & Action Plan</h2>
+                    <p id="modal-desc">Actionable machine maintenance protocols based on real-time spectral telemetry.</p>
+                </div>
+            </div>
+
+            <div class="modal-tabs">
+                <button class="modal-tab active" onclick="openTab('mechanic-report', this)">
+                    <span class="tab-icon">🔧</span> Mechanic Report
+                </button>
+                <button class="modal-tab" id="diy-tab-btn" onclick="openTab('diy-tutorial', this)">
+                    <span class="tab-icon">🛠️</span> Step-by-Step Fix Guide
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div id="mechanic-report" class="tab-content active"></div>
+                <div id="diy-tutorial" class="tab-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
