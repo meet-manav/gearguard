@@ -5,3 +5,5 @@ __pycache__/
 venv/
 env/
 .pytest_cache/
+*.zip
+GearGuard_Project_Backup.zip
